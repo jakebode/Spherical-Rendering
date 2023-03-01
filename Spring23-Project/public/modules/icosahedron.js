@@ -80,11 +80,18 @@ class Icosahedron {
         var vd = [];
         for (let i = 0; i < this.indices.length; i++) {
             for (let j = 0; j < 3; j++) {
-                vd.push(this.vertices[this.indices[i][j] * 3] / 3);
-                vd.push(this.vertices[this.indices[i][j] * 3 + 1] / 3);
-                vd.push(this.vertices[this.indices[i][j] * 3 + 2] / 3);
+                var temp = [this.vertices[this.indices[i][j] * 3] / 3, this.vertices[this.indices[i][j] * 3 + 1] / 3, this.vertices[this.indices[i][j] * 3 + 2] / 3];
+                
+                temp = this.#normalize(temp);
+
+                vd = vd.concat(temp);
+                //vd.push(this.vertices[this.indices[i][j] * 3] / 3);
+                //vd.push(this.vertices[this.indices[i][j] * 3 + 1] / 3);
+                //vd.push(this.vertices[this.indices[i][j] * 3 + 2] / 3);
+
             }
         }
+        //console.log(vd);
         return vd;
     }
 
@@ -104,16 +111,16 @@ class Icosahedron {
             newVertices = newVertices.concat(mp2);
 
             newVertices = newVertices.concat(v2);
-            newVertices = newVertices.concat(mp1);
             newVertices = newVertices.concat(mp3);
+            newVertices = newVertices.concat(mp1);
 
             newVertices = newVertices.concat(v3);
             newVertices = newVertices.concat(mp2);
             newVertices = newVertices.concat(mp3);
 
             newVertices = newVertices.concat(mp1);
-            newVertices = newVertices.concat(mp2);
             newVertices = newVertices.concat(mp3);
+            newVertices = newVertices.concat(mp2);
         }
         console.log(newVertices);
         this.vertexData = newVertices;
@@ -126,6 +133,66 @@ class Icosahedron {
     #normalize(vec) {
         var norm = Math.sqrt(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
         return [vec[0]/norm, vec[1]/norm, vec[2]/norm];
+    }
+
+    // getNormals() {
+    //     var normals = [];
+    //     for (let i = 0; i < this.vertexData.length; i+=9) {
+
+    //         var crossProduct = this.#normalize(this.#cross(this.vertexData.slice(i, i+9)));
+            
+    //         normals = normals.concat(crossProduct);
+    //         normals = normals.concat(crossProduct);
+    //         normals = normals.concat(crossProduct);
+    //     }
+    //     return normals;
+    // }
+
+    getNormals() {
+        var normals=[];
+        for (let i = 0; i < this.vertexData.length; i+=3) {
+            normals = normals.concat(this.vertexData.slice(i, i+3));    
+        }
+        return normals;
+    }
+
+    #testCross(v) {
+        var p1 = v[0] - v[3];
+        var p2 = v[1] - v[4];
+        var p3 = v[2] - v[5];
+        var q1 = v[3] - v[6];
+        var q2 = v[4] - v[7];
+        var q3 = v[5] - v[8];
+
+        var cross = [p2*q3-p3*q2, p1*q3-p3*q1, p1*q2-p2*q1];
+        
+        if (this.#dotProduct([v[0], v[1], v[2]], cross) < 0) {
+            return [0,0,1];
+        } else {
+            return [0,0,0];
+            ///return [0-cross[0], 0-cross[1], 0-cross[2]];
+        }
+    }
+
+    #cross(v) {
+        var p1 = v[0] - v[3];
+        var p2 = v[1] - v[4];
+        var p3 = v[2] - v[5];
+        var q1 = v[3] - v[6];
+        var q2 = v[4] - v[7];
+        var q3 = v[5] - v[8];
+
+        var cross = [p2*q3-p3*q2, p3*q1-p1*q3, p1*q2-p2*q1];
+        
+        if (this.#dotProduct([v[0], v[1], v[2]], cross) > 0) {
+            return cross;
+        } else {
+            return [0-cross[0], 0-cross[1], 0-cross[2]];
+        }
+    }
+
+    #dotProduct(v1, v2) {
+        return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
     }
 
 }
