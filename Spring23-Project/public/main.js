@@ -3,153 +3,165 @@
 *   Main js file to create canvas and do scripts for webpage
 */
 
-// 1) spherical coordinates to map textures onto sphere
-// 2) next compute normals to configure shading/coloring
-//  - normal to sphere, then normal to polyhedron
-//  - assign random colors to vertices
-// 3) generate random fields, height fields on 'planet'
-
-
-// how to map textures onto sphere
-// learn to create texture
-
-import { Canvas } from './modules/canvas.js';
 import { Icosahedron } from './modules/icosahedron.js';
+import { createBuffers } from './modules/dataBuffers.js';
+import { drawIcos } from './modules/drawIcos.js'
 
-///////////////////////////////////////////////////////////
-// Initializing of WebGL context in web canvas
-const canvas = document.querySelector('canvas');
-const gl = canvas.getContext('webgl');
+let cubeRotation = 0.0;
+let deltaTime = 0;
 
-if (!gl) {
-    throw new Error('WebGL not supported');
-}
+main();
 
-// use of my terrible canvas object to simplify main.js
-const myCanvas = new Canvas(gl);
+function main() {
+    const canvas = document.querySelector('canvas');
+    const gl = canvas.getContext('webgl');
 
-// slightly better use of JS classees under a future inheritance hierarchy
-const icosahedron = new Icosahedron();
-icosahedron.subdivideEdges();
-icosahedron.subdivideEdges();
-icosahedron.subdivideEdges();
-const vertexData = icosahedron.vertexData;
-const colorData = icosahedron.getNormals();
+    if (!gl) {
+        alert('WebGL not supported');
+        return;
+    }
 
-myCanvas.bindBuffers(vertexData, colorData);
+    var vertexSource = `
+        precision highp float;
 
-//////////////////////////////////////////////////////////////////////////
-// Begin shader language code to compile and bind to program
-//
+        attribute vec3 position;
+        attribute vec2 texture;
 
-// need better way to implement shader code into program
-var vertexSource = `
-precision mediump float;
-attribute vec3 position;
-attribute vec3 color;
-//attribute vec3 aVertexNormal;
-varying vec3 vColor;
-uniform mat4 matrix;
-vec4 a;
-vec3 temp;
-void main() {
-    a = matrix * vec4(color, 1.0);
-    //vColor = vec3(1.0, 2.0, 3.0);
-    vColor = a.xyz;
-    gl_Position = matrix * vec4(position, 1);
-}
-`;
+        varying vec2 texCoord;
+        uniform mat4 matrix;
 
-var fragmentSource = `
-precision highp float;
-varying vec3 vColor;
-float a;
-void main() {
-    
-    //if (vColor.z > 0.0) {
-    //    gl_FragColor = vec4(1.0,0.0,0.0,1.0);
-    //} else {
-    //    gl_FragColor = vec4(0.0,0.0,1.0,1.0);
-    //}
-    
-    
-    a = 0.8 * clamp(dot(normalize(vColor), vec3(0.0, 0.0, -1.0)), 0.0, 1.0);
-    gl_FragColor = vec4(a + 0.2, a + 0.2, a + 0.2, 1.0);
-}
-`;
+        void main() {
+            gl_Position = matrix * vec4(position, 1);
+            texCoord = texture;
+        }
+    `;
 
-////////////////////////////////////////////
-// shader code below used for testing
+    var fragmentSource = `
+        precision highp float;
 
-var newVShader = `
-precision highp float;
-attribute vec3 position;
-attribute vec3 color;
-//attribute vec3 aVertexNormal;
-varying vec3 vColor;
-varying vec3 coord;
-uniform mat4 matrix;
-vec4 a;
-vec3 temp;
-void main() {
-    coord = position;
-    a = matrix * vec4(color, 1.0);
-    //vColor = vec3(1.0, 2.0, 3.0);
-    vColor = a.xyz;
-    gl_Position = matrix * vec4(position, 1);
-}
-`;
+        // passed from vertexSource
+        varying vec2 texCoord;
 
-var newFShader = `
-precision highp float;
-varying vec3 vColor;
-varying vec3 coord;
-float a;
-void main() {
-    a = 0.8 * clamp(dot(normalize(vColor), normalize(vec3(-5.0, -5.0, -5.0)-coord)), 0.0, 1.0);
-    gl_FragColor = vec4(a + 0.2, a + 0.2, a + 0.2, 1.0);
-}
-`;
+        // The texture
+        uniform sampler2D texture;
 
-//
-// End of shader code
-///////////////////////////////////////////////////////////////////////////
+        void main() {
+            gl_FragColor = texture2D(texture, texCoord);
+        }
+    `;
 
-myCanvas.createShaders(newVShader, newFShader);
-myCanvas.initProgram();
-myCanvas.linkAttributes();
+    const shaderProgram = createShaderProgram(gl, vertexSource, fragmentSource);
 
+    const programInfo = {
+        program: shaderProgram,
+        attribLocations: {
+            vertexPosition: gl.getAttribLocation(shaderProgram, "aVertexPosition"),
+            textureCoord: gl.getAttribLocation(shaderProgram, "aTextureCoord"),
+        },
+        uniformLocations: {
+            projectionMatrix: gl.getUniformLocation(shaderProgram, "uProjectionMatrix"),
+            modelViewMatrix: gl.getUniformLocation(shaderProgram, "uModelViewMatrix"),
+            uSampler: gl.getUniformLocation(shaderProgram, "uSampler"),
+        },
+    };
 
-// WORK IN PROGRESS:
-//      need to implement proper method in Canvas class to animate
+    const icosahedron = new Icosahedron();
+    icosahedron.subdivideEdges();
+    icosahedron.subdivideEdges();
+    icosahedron.subdivideEdges();
 
-//myCanvas.animate(icosahedron.vertexData, false, true, false);
+    const buffers = createBuffers(gl, icosahedron);
 
-const uniformLocations = {
-    matrix: gl.getUniformLocation(myCanvas.program, 'matrix'),
-};
+    const texture = loadTexture(gl, 'uofa.jpg');
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
-const matrix = mat4.create();
+    let then = 0;
 
-mat4.translate(matrix, matrix, [0, 0, 0]);
-mat4.scale(matrix, matrix, [0.5, 0.5, 0.5]);
+    function animate(now) {
+        now *= 0.001;
+        deltaTime = now - then;
+        then = now;
 
-console.log(matrix);
+        drawIcos(gl, programInfo, buffers, texture, cubeRotation);
+        cubeRotation += deltaTime;
 
-function animate() {
+        requestAnimationFrame(animate);
+    }
     requestAnimationFrame(animate);
-    //mat4.rotateY(matrix, matrix, Math.PI/2 / 70);
-    //mat4.rotateX(matrix, matrix, Math.PI/2 / 70);
-    //mat4.rotateZ(matrix, matrix, Math.PI/2 / 70);
-    gl.uniformMatrix4fv(uniformLocations.matrix, false, matrix);
-    
-    gl.disable(gl.CULL_FACE);
-    gl.enable(gl.DEPTH_TEST);
-    // gl.cullFace(gl.BACK);
-    gl.clear(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT);
-    gl.clearColor(0, 0.5, 0, 1);
+}
+    // gl.useProgram(programInfo.program);
+    // gl.enable(gl.DEPTH_TEST);
 
-    gl.drawArrays(gl.TRIANGLES, 0, vertexData.length / 3);
+    // const uniformLocations = {
+    //     matrix: gl.getUniformLocation(programInfo.program, 'matrix'),
+    // };
+
+    // const matrix = mat4.create();
+    // mat4.translate(matrix, matrix, [0, 0, 0]);
+    // mat4.scale(matrix, matrix, [0.5, 0.5, 0.5]);
+
+    // function animate() {
+    //     requestAnimationFrame(animate);
+    //     //mat4.rotateY(matrix, matrix, Math.PI/2 / 70);
+    //     //mat4.rotateX(matrix, matrix, Math.PI/2 / 70);
+    //     //mat4.rotateZ(matrix, matrix, Math.PI/2 / 70);
+    //     gl.uniformMatrix4fv(uniformLocations.matrix, false, matrix);
+        
+    //     gl.disable(gl.CULL_FACE);
+    //     gl.enable(gl.DEPTH_TEST);
+    //     gl.clear(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT);
+    //     gl.clearColor(0, 0.5, 0, 1);
+
+    //     gl.drawArrays(gl.TRIANGLES, 0, icosahedron.vertexData.length / 3);
+    // }
+
+    // animate();
+
+function createShaderProgram(gl, vertexSource, fragmentSource) {
+    const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+    gl.shaderSource(vertexShader, vertexSource);
+    gl.compileShader(vertexShader);
+    
+    const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+    gl.shaderSource(fragmentShader, fragmentSource);
+    gl.compileShader(fragmentShader);
+
+    const program = gl.createProgram();
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+
+    return program;
 }
 
-animate();
+function loadTexture(gl, url) {
+    const texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+
+    const level = 0;
+    const internalFormat = gl.RGBA;
+    const width = 1;
+    const height = 1;
+    const border = 0;
+    const srcFormat = gl.RGBA;
+    const srcType = gl.UNSIGNED_BYTE;
+    const pixel = new Uint8Array([0, 0, 255, 255]); // opaque blue
+    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel);
+  
+    const image = new Image();
+    image.onload = () => {
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, image);
+    
+        if (((image.width & (image.width - 1)) === 0) && (image.height & (image.height - 1)) === 0) {
+            gl.generatedMipmap(gl.TEXTURE_2D);
+        } else {
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        }
+    };
+    image.src = url;
+  
+    return texture;
+}
