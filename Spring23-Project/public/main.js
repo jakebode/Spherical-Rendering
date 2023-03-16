@@ -75,47 +75,47 @@ function main() {
     const texture = loadTexture(gl, 'uofa.jpg');
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
-    let then = 0;
+    // let then = 0;
 
-    function animate(now) {
-        now *= 0.001;
-        deltaTime = now - then;
-        then = now;
+    // function animate(now) {
+    //     now *= 0.001;
+    //     deltaTime = now - then;
+    //     then = now;
 
-        drawIcos(gl, programInfo, buffers, texture, cubeRotation);
-        cubeRotation += deltaTime;
+    //     drawIcos(gl, programInfo, buffers, texture, cubeRotation);
+    //     cubeRotation += deltaTime;
 
+    //     requestAnimationFrame(animate);
+    // }
+    // requestAnimationFrame(animate);
+
+    gl.useProgram(programInfo.program);
+    gl.enable(gl.DEPTH_TEST);
+
+    const uniformLocations = {
+        matrix: gl.getUniformLocation(programInfo.program, 'matrix'),
+    };
+
+    const matrix = mat4.create();
+    mat4.translate(matrix, matrix, [0, 0, 0]);
+    mat4.scale(matrix, matrix, [0.5, 0.5, 0.5]);
+
+    function animate() {
+        //mat4.rotateY(matrix, matrix, Math.PI/2 / 70);
+        //mat4.rotateX(matrix, matrix, Math.PI/2 / 70);
+        //mat4.rotateZ(matrix, matrix, Math.PI/2 / 70);
+        gl.uniformMatrix4fv(uniformLocations.matrix, false, matrix);
+        
+        gl.disable(gl.CULL_FACE);
+        gl.enable(gl.DEPTH_TEST);
+        gl.clear(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT);
+        gl.clearColor(0, 0.5, 0, 1);
+
+        gl.drawArrays(gl.TRIANGLES, 0, icosahedron.vertexData.length / 3);
         requestAnimationFrame(animate);
     }
     requestAnimationFrame(animate);
 }
-    // gl.useProgram(programInfo.program);
-    // gl.enable(gl.DEPTH_TEST);
-
-    // const uniformLocations = {
-    //     matrix: gl.getUniformLocation(programInfo.program, 'matrix'),
-    // };
-
-    // const matrix = mat4.create();
-    // mat4.translate(matrix, matrix, [0, 0, 0]);
-    // mat4.scale(matrix, matrix, [0.5, 0.5, 0.5]);
-
-    // function animate() {
-    //     requestAnimationFrame(animate);
-    //     //mat4.rotateY(matrix, matrix, Math.PI/2 / 70);
-    //     //mat4.rotateX(matrix, matrix, Math.PI/2 / 70);
-    //     //mat4.rotateZ(matrix, matrix, Math.PI/2 / 70);
-    //     gl.uniformMatrix4fv(uniformLocations.matrix, false, matrix);
-        
-    //     gl.disable(gl.CULL_FACE);
-    //     gl.enable(gl.DEPTH_TEST);
-    //     gl.clear(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT);
-    //     gl.clearColor(0, 0.5, 0, 1);
-
-    //     gl.drawArrays(gl.TRIANGLES, 0, icosahedron.vertexData.length / 3);
-    // }
-
-    // animate();
 
 function createShaderProgram(gl, vertexSource, fragmentSource) {
     const vertexShader = gl.createShader(gl.VERTEX_SHADER);
@@ -136,18 +136,19 @@ function createShaderProgram(gl, vertexSource, fragmentSource) {
 
 function loadTexture(gl, url) {
     const texture = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, texture);
 
-    const level = 0;
-    const internalFormat = gl.RGBA;
-    const width = 1;
-    const height = 1;
-    const border = 0;
-    const srcFormat = gl.RGBA;
-    const srcType = gl.UNSIGNED_BYTE;
-    const pixel = new Uint8Array([0, 0, 255, 255]); // opaque blue
+    let level = 0,
+        internalFormat = gl.RGBA,
+        width = 1,
+        height = 1,
+        border = 0,
+        srcFormat = gl.RGBA,
+        srcType = gl.UNSIGNED_BYTE,
+        pixel = new Uint8Array([0, 0, 255, 255]);
     gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel);
-  
+
     const image = new Image();
     image.onload = () => {
         gl.bindTexture(gl.TEXTURE_2D, texture);
