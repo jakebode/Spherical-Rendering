@@ -132,20 +132,20 @@ class Icosahedron {
     }
 
     getTexCoords() {
-        let arr = [];
-        for (let i = 0; i < 11520; i+=9) {
-            // phi and theta
-            // if (arr[i] < 0) {
-            //     arr.push(Math.atan(arr[i]/arr[i+1] + Math.PI));
-            // } else {
-            //     arr.push(Math.atan(arr[i]/arr[i+1]));
-            // }
-            // if (arr[i] === 0) {
-            //     arr.push(0);
-            // } else {
-            //     arr.push(Math.acos(arr[i+2]));
-            // }
-            arr = arr.concat(0,0,0,1,1,1);
+        let arr = new Float32Array(this.vertexData.length * (2/3));
+        let j = 0;
+        for (let i = 0; i < this.vertexData.length; i+=3) {
+            if (this.vertexData[i] === 0 && this.vertexData[i+1] === 0) {
+                arr[j] = 0;
+            } else if (this.vertexData[i] < 0) {
+                arr[j] = Math.atan(this.vertexData[i+1]/this.vertexData[i]) + Math.PI;
+            } else {
+                arr[j] = Math.atan(this.vertexData[i+1]/this.vertexData[i]);
+            }
+            arr[j] *= 1/(2*Math.PI);
+            j++;
+            arr[j] = Math.acos(this.vertexData[i+2]) * (1/Math.PI);
+            j++;
         }
         return arr;
     }
