@@ -36,25 +36,52 @@ icosahedron.subdivideEdges();
 const vertexData = icosahedron.vertexData;
 const colorData = icosahedron.getNormals();
 
-myCanvas.bindBuffers(vertexData, colorData);
+// console.log(vertexData);
+const texCoords = icosahedron.getTexCoords();
+// console.log(texCoords);
+myCanvas.bindBuffers(vertexData, colorData, texCoords);
 
-//////////////////////////////////////////////////////////////////////////
-// Begin shader language code to compile and bind to program
-//
+////////////////////////////////////////////
+// shader code below
 
-// need better way to implement shader code into program
-var vertexSource = `
-precision mediump float;
+    // var vertexSource = `
+    //     precision highp float;
+    //     attribute vec3 position;
+    //     attribute vec2 texture;
+    //     varying vec2 texCoord;
+    //     uniform mat4 matrix;
+    //     void main() {
+    //         gl_Position = matrix * vec4(position, 1);
+    //         texCoord = texture;
+    //     }
+    // `;
+
+    // var fragmentSource = `
+    //     precision highp float;
+    //     // passed from vertexSource
+    //     varying vec2 texCoord;
+    //     // The texture
+    //     uniform sampler2D texture;
+    //     void main() {
+    //         gl_FragColor = texture2D(texture, texCoord);
+    //     }
+    // `;
+
+    var vertexSource = `
+precision highp float;
 attribute vec3 position;
 attribute vec3 color;
-//attribute vec3 aVertexNormal;
+attribute vec2 texture;
+
 varying vec3 vColor;
+varying vec2 vTexture;
 uniform mat4 matrix;
 vec4 a;
 vec3 temp;
 void main() {
     a = matrix * vec4(color, 1.0);
     //vColor = vec3(1.0, 2.0, 3.0);
+    vTexture = texture;
     vColor = a.xyz;
     gl_Position = matrix * vec4(position, 1);
 }
@@ -63,6 +90,10 @@ void main() {
 var fragmentSource = `
 precision highp float;
 varying vec3 vColor;
+varying vec2 vTexture;
+
+uniform sampler2D texture;
+
 float a;
 void main() {
     
@@ -74,40 +105,8 @@ void main() {
     
     
     a = 0.8 * clamp(dot(normalize(vColor), vec3(0.0, 0.0, -1.0)), 0.0, 1.0);
-    gl_FragColor = vec4(a + 0.2, a + 0.2, a + 0.2, 1.0);
-}
-`;
-
-////////////////////////////////////////////
-// shader code below used for testing
-
-var newVShader = `
-precision highp float;
-attribute vec3 position;
-attribute vec3 color;
-//attribute vec3 aVertexNormal;
-varying vec3 vColor;
-varying vec3 coord;
-uniform mat4 matrix;
-vec4 a;
-vec3 temp;
-void main() {
-    coord = position;
-    a = matrix * vec4(color, 1.0);
-    //vColor = vec3(1.0, 2.0, 3.0);
-    vColor = a.xyz;
-    gl_Position = matrix * vec4(position, 1);
-}
-`;
-
-var newFShader = `
-precision highp float;
-varying vec3 vColor;
-varying vec3 coord;
-float a;
-void main() {
-    a = 0.8 * clamp(dot(normalize(vColor), normalize(vec3(-5.0, -5.0, -5.0)-coord)), 0.0, 1.0);
-    gl_FragColor = vec4(a + 0.2, a + 0.2, a + 0.2, 1.0);
+    //gl_FragColor = vec4(a + 0.2, a*vTexture.x + 0.2, a*vTexture.y + 0.2, 1.0);
+    gl_FragColor = texture2D(texture, vTexture);
 }
 `;
 
@@ -115,7 +114,7 @@ void main() {
 // End of shader code
 ///////////////////////////////////////////////////////////////////////////
 
-myCanvas.createShaders(newVShader, newFShader);
+myCanvas.createShaders(vertexSource, fragmentSource);
 myCanvas.initProgram();
 myCanvas.linkAttributes();
 
@@ -134,13 +133,11 @@ const matrix = mat4.create();
 mat4.translate(matrix, matrix, [0, 0, 0]);
 mat4.scale(matrix, matrix, [0.5, 0.5, 0.5]);
 
-console.log(matrix);
-
 function animate() {
     requestAnimationFrame(animate);
-    //mat4.rotateY(matrix, matrix, Math.PI/2 / 70);
-    //mat4.rotateX(matrix, matrix, Math.PI/2 / 70);
-    //mat4.rotateZ(matrix, matrix, Math.PI/2 / 70);
+    //mat4.rotateY(matrix, matrix, Math.PI/2 / 100);
+    //mat4.rotateX(matrix, matrix, Math.PI/2 / 200);
+    mat4.rotateZ(matrix, matrix, Math.PI/2 / 300);
     gl.uniformMatrix4fv(uniformLocations.matrix, false, matrix);
     
     gl.disable(gl.CULL_FACE);
