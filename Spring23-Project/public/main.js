@@ -19,7 +19,7 @@ import { Icosahedron } from './modules/icosahedron.js';
 ///////////////////////////////////////////////////////////
 // Initializing of WebGL context in web canvas
 const canvas = document.querySelector('canvas');
-const gl = canvas.getContext('webgl');
+const gl = canvas.getContext('webgl2');
 
 if (!gl) {
     throw new Error('WebGL not supported');
@@ -30,9 +30,9 @@ const myCanvas = new Canvas(gl);
 
 // slightly better use of JS classees under a future inheritance hierarchy
 const icosahedron = new Icosahedron();
-icosahedron.subdivideEdges();
-icosahedron.subdivideEdges();
-icosahedron.subdivideEdges();
+// icosahedron.subdivideEdges();
+// icosahedron.subdivideEdges();
+// icosahedron.subdivideEdges();
 const vertexData = icosahedron.vertexData;
 const colorData = icosahedron.getNormals();
 
@@ -135,16 +135,16 @@ mat4.scale(matrix, matrix, [0.5, 0.5, 0.5]);
 
 function animate() {
     requestAnimationFrame(animate);
-    //mat4.rotateY(matrix, matrix, Math.PI/2 / 100);
-    //mat4.rotateX(matrix, matrix, Math.PI/2 / 200);
-    mat4.rotateZ(matrix, matrix, Math.PI/2 / 300);
+    mat4.rotateY(matrix, matrix, Math.PI/2 / 300);
+    mat4.rotateX(matrix, matrix, Math.PI/2 / 200);
+    //mat4.rotateZ(matrix, matrix, Math.PI/2 / 300);
     gl.uniformMatrix4fv(uniformLocations.matrix, false, matrix);
     
     gl.disable(gl.CULL_FACE);
     gl.enable(gl.DEPTH_TEST);
     // gl.cullFace(gl.BACK);
     gl.clear(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT);
-    gl.clearColor(0, 0.5, 0, 1);
+    gl.clearColor(1, 1, 1, 1);
 
     gl.drawArrays(gl.TRIANGLES, 0, vertexData.length / 3);
 }

@@ -197,28 +197,28 @@ class Icosahedron {
 
     getTexCoords() {
         let arr = new Float32Array(this.vertexData.length * (2/3));
-        let j = 0;
+        let j = 0,
+            phi, theta,
+            eps = -2*Math.PI/7   ;
         for (let i = 0; i < this.vertexData.length; i+=3) {
-            if (this.vertexData[i] === 0 && this.vertexData[i+1] === 0) {
-                arr[j] = 0;
-            } else if (this.vertexData[i] < 0) {
-                arr[j] = Math.atan(this.vertexData[i+1]/this.vertexData[i]) + Math.PI;
+            let x = this.vertexData[i],
+                y = this.vertexData[i+1],
+                z = this.vertexData[i+2];
+            if (x === 0 && y === 0) {
+                theta = 0;
+            } else if (x < 0) {
+                theta = Math.atan(y/x) + Math.PI;
             } else {
-                arr[j] = Math.atan(this.vertexData[i+1]/this.vertexData[i]);
+                theta = Math.atan(y/x);
             }
-            arr[j] *= 1/(2*Math.PI);
-            j++;
-            arr[j] = Math.acos(this.vertexData[i+2]) * (1/Math.PI);
-            j++;
+          
+            phi = Math.acos(z);
+
+
+            arr[j++] = 0.5*theta / Math.PI;
+            arr[j++] = phi /Math.PI;
         }
 
-        for (let i = 0; i < arr.length; i+=2) {
-            if (i + 2 < arr.length) {
-                if (Math.abs(arr[i+1] - arr[i+3]) > 2*Math.PI/5) {
-                    
-                }
-            }
-        }
         return arr;
     }
 

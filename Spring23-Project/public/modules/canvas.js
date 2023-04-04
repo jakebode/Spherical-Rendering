@@ -73,21 +73,18 @@ class Canvas {
             this.gl.texImage2D(this.gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel);
     
         const image = new Image();
-        image.src = "earth.jpg";
+        image.src = "uofa.jpeg";
         image.onload = () => {
             this.gl.activeTexture(this.gl.TEXTURE0);
             this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
             this.gl.texImage2D(this.gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, image);
         
-            if (((image.width & (image.width - 1)) === 0) && (image.height & (image.height - 1)) === 0) {
-                this.gl.generatedMipmap(this.gl.TEXTURE_2D);
-            } else {
-                this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
-                this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
-                this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
-            }
-        };
+            this.gl.generateMipmap(this.gl.TEXTURE_2D);
 
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.REPEAT);
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.REPEAT);
+            this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
+        };
     }
 
 // go through u,v coordinates (phi, theta) to compare whether 
@@ -96,7 +93,6 @@ class Canvas {
 
 // if (Math.fabs(a-b) > 0.2 || Math.fabs(b-c) > 0.2 || 
 // Math.fabs(a-c) > 0.2) each part as a flag ab, bc, ac
-
 
     initProgram() {
         this.program = this.gl.createProgram();
