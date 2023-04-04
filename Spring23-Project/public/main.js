@@ -4,165 +4,99 @@
 */
 
 import { Icosahedron } from './modules/icosahedron.js';
-import { createBuffers } from './modules/dataBuffers.js';
-import { drawIcos } from './modules/drawIcos.js'
-
-let cubeRotation = 0.0;
-let deltaTime = 0;
+import { createShaderProgram, loadTexture, bindBuffers, linkAttributes } from './modules/dataBuffers.js';
 
 main();
 
 function main() {
     const canvas = document.querySelector('canvas');
-    const gl = canvas.getContext('webgl');
+    const gl = canvas.getContext('webgl2');
 
     if (!gl) {
-        alert('WebGL not supported');
+        alert('WebGL2 not supported');
         return;
     }
-
-    var vertexSource = `
-        precision highp float;
-
-        attribute vec3 position;
-        attribute vec2 texture;
-
-        varying vec2 texCoord;
-        uniform mat4 matrix;
-
-        void main() {
-            gl_Position = matrix * vec4(position, 1);
-            texCoord = texture;
-        }
-    `;
-
-    var fragmentSource = `
-        precision highp float;
-
-        // passed from vertexSource
-        varying vec2 texCoord;
-
-        // The texture
-        uniform sampler2D texture;
-
-        void main() {
-            gl_FragColor = texture2D(texture, texCoord);
-        }
-    `;
-
-    const shaderProgram = createShaderProgram(gl, vertexSource, fragmentSource);
-
-    const programInfo = {
-        program: shaderProgram,
-        attribLocations: {
-            vertexPosition: gl.getAttribLocation(shaderProgram, "aVertexPosition"),
-            textureCoord: gl.getAttribLocation(shaderProgram, "aTextureCoord"),
-        },
-        uniformLocations: {
-            projectionMatrix: gl.getUniformLocation(shaderProgram, "uProjectionMatrix"),
-            modelViewMatrix: gl.getUniformLocation(shaderProgram, "uModelViewMatrix"),
-            uSampler: gl.getUniformLocation(shaderProgram, "uSampler"),
-        },
-    };
 
     const icosahedron = new Icosahedron();
     icosahedron.subdivideEdges();
     icosahedron.subdivideEdges();
     icosahedron.subdivideEdges();
 
-    const buffers = createBuffers(gl, icosahedron);
+    var vertexSource = `
+        precision highp float;
 
-    const texture = loadTexture(gl, 'uofa.jpg');
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+        attribute vec3 position;
+        attribute vec3 color;
+        attribute vec2 texture;
 
-    // let then = 0;
+        varying vec3 vColor;
+        varying vec2 vTexture;
 
-    // function animate(now) {
-    //     now *= 0.001;
-    //     deltaTime = now - then;
-    //     then = now;
+        uniform mat4 matrix;
 
-    //     drawIcos(gl, programInfo, buffers, texture, cubeRotation);
-    //     cubeRotation += deltaTime;
+        vec4 a;
+        vec3 temp;
 
-    //     requestAnimationFrame(animate);
-    // }
-    // requestAnimationFrame(animate);
+        void main() {
+            a = matrix * vec4(color, 1.0);
+            vTexture = texture;
+            vColor = a.xyz;
+            gl_Position = matrix * vec4(position, 1);
+        }
+    `;
 
-    gl.useProgram(programInfo.program);
+    var fragmentSource = `
+        precision highp float;
+
+        varying vec3 vColor;
+        varying vec2 vTexture;
+
+        uniform sampler2D texture;
+
+        void main() {
+            gl_FragColor = texture2D(texture, vTexture);
+        }
+    `;
+
+    const buffers = bindBuffers(gl, icosahedron);
+
+    const shaderProgram = createShaderProgram(gl, vertexSource, fragmentSource);
+
+    const texture = loadTexture(gl, 'earth.jpg');
+
+    linkAttributes(gl, buffers, shaderProgram);
+
+    gl.useProgram(shaderProgram);
     gl.enable(gl.DEPTH_TEST);
 
-    const uniformLocations = {
-        matrix: gl.getUniformLocation(programInfo.program, 'matrix'),
-    };
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
+    const uniformLocations = {
+        matrix: gl.getUniformLocation(shaderProgram, 'matrix'),
+    };
+    
     const matrix = mat4.create();
+    
     mat4.translate(matrix, matrix, [0, 0, 0]);
     mat4.scale(matrix, matrix, [0.5, 0.5, 0.5]);
-
+    
     function animate() {
-        //mat4.rotateY(matrix, matrix, Math.PI/2 / 70);
-        //mat4.rotateX(matrix, matrix, Math.PI/2 / 70);
-        //mat4.rotateZ(matrix, matrix, Math.PI/2 / 70);
+        requestAnimationFrame(animate);
+
+        mat4.rotateX(matrix, matrix, Math.PI/2 / 200);
+        mat4.rotateY(matrix, matrix, Math.PI/2 / 300);
+        //mat4.rotateZ(matrix, matrix, Math.PI/2 / 300);
+
         gl.uniformMatrix4fv(uniformLocations.matrix, false, matrix);
         
         gl.disable(gl.CULL_FACE);
         gl.enable(gl.DEPTH_TEST);
+
         gl.clear(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT);
-        gl.clearColor(0, 0.5, 0, 1);
-
+        gl.clearColor(0, 0, 1, 1);
+    
         gl.drawArrays(gl.TRIANGLES, 0, icosahedron.vertexData.length / 3);
-        requestAnimationFrame(animate);
     }
-    requestAnimationFrame(animate);
-}
-
-function createShaderProgram(gl, vertexSource, fragmentSource) {
-    const vertexShader = gl.createShader(gl.VERTEX_SHADER);
-    gl.shaderSource(vertexShader, vertexSource);
-    gl.compileShader(vertexShader);
     
-    const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
-    gl.shaderSource(fragmentShader, fragmentSource);
-    gl.compileShader(fragmentShader);
-
-    const program = gl.createProgram();
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-
-    return program;
-}
-
-function loadTexture(gl, url) {
-    const texture = gl.createTexture();
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-
-    let level = 0,
-        internalFormat = gl.RGBA,
-        width = 1,
-        height = 1,
-        border = 0,
-        srcFormat = gl.RGBA,
-        srcType = gl.UNSIGNED_BYTE,
-        pixel = new Uint8Array([0, 0, 255, 255]);
-    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel);
-
-    const image = new Image();
-    image.onload = () => {
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, image);
-    
-        if (((image.width & (image.width - 1)) === 0) && (image.height & (image.height - 1)) === 0) {
-            gl.generatedMipmap(gl.TEXTURE_2D);
-        } else {
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        }
-    };
-    image.src = url;
-  
-    return texture;
+    animate();
 }
