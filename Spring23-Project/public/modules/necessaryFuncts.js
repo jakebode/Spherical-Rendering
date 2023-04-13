@@ -1,3 +1,8 @@
+/*
+*   Author: Jake Bode
+*   Necessary functions to get Webgl2 working properly for this
+*/
+
 function bindBuffers(gl, icosahedron) {
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);

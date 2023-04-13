@@ -4,7 +4,7 @@
 */
 
 import { Icosahedron } from './modules/icosahedron.js';
-import { createShaderProgram, bindBuffers, linkAttributes } from './modules/dataBuffers.js';
+import { createShaderProgram, bindBuffers, linkAttributes } from './modules/necessaryFuncts.js';
 
 main();
 
