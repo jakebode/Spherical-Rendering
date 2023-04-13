@@ -60,7 +60,7 @@ function main() {
 
     const buffers = bindBuffers(gl, icosahedron);
 
-    const shaderProgram = createShaderProgram(gl, vertexSource, fragmentSource, 'earth.jpg');
+    const shaderProgram = createShaderProgram(gl, vertexSource, fragmentSource, 'images/earth.jpg');
 
     linkAttributes(gl, buffers, shaderProgram);
 
