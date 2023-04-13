@@ -73,7 +73,7 @@ class Canvas {
             this.gl.texImage2D(this.gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel);
     
         const image = new Image();
-        image.src = "uofa.jpeg";
+        image.src = "earth.jpg";
         image.onload = () => {
             this.gl.activeTexture(this.gl.TEXTURE0);
             this.gl.bindTexture(this.gl.TEXTURE_2D, texture);

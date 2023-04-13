@@ -30,9 +30,9 @@ const myCanvas = new Canvas(gl);
 
 // slightly better use of JS classees under a future inheritance hierarchy
 const icosahedron = new Icosahedron();
-// icosahedron.subdivideEdges();
-// icosahedron.subdivideEdges();
-// icosahedron.subdivideEdges();
+icosahedron.subdivideEdges();
+icosahedron.subdivideEdges();
+icosahedron.subdivideEdges();
 const vertexData = icosahedron.vertexData;
 const colorData = icosahedron.getNormals();
 
@@ -150,3 +150,9 @@ function animate() {
 }
 
 animate();
+
+// sample perlin noise in js or shader
+// perlin3(x,y,z)
+// implement 3d texture 
+
+// get perlin, open simplex noise

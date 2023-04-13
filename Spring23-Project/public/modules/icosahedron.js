@@ -73,6 +73,10 @@ class Icosahedron {
     //  in more general class in the future!
     // ==================================================================================
 
+    rotateVertexData() {
+
+    }
+
     /////////////////////////////////////////////////////////////////////////
     // takes pairings of verticies to create an array containing all vertexes
     //  needed to display the Icosahedron with triangles
@@ -124,6 +128,10 @@ class Icosahedron {
         }
         //console.log(newVertices);
         this.vertexData = newVertices;
+    }
+
+    flagTriangles() {
+
     }
 
     #getMidpoint(v1, v2) {
@@ -195,28 +203,87 @@ class Icosahedron {
         return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
     }
 
+    #flaggedCoords() {
+        for (let i = 0; i < this.vertexData.length; i+=9) {
+            
+        }        
+    }
+
     getTexCoords() {
         let arr = new Float32Array(this.vertexData.length * (2/3));
-        let j = 0,
-            phi, theta,
-            eps = -2*Math.PI/7   ;
-        for (let i = 0; i < this.vertexData.length; i+=3) {
-            let x = this.vertexData[i],
-                y = this.vertexData[i+1],
-                z = this.vertexData[i+2];
-            if (x === 0 && y === 0) {
-                theta = 0;
-            } else if (x < 0) {
-                theta = Math.atan(y/x) + Math.PI;
+
+        let j = 0;
+        let phi1, phi2, phi3, theta1, theta2, theta3;
+
+        for (let i = 0; i < this.vertexData.length; i+=9) {
+            let x1 = this.vertexData[i],
+                y1 = this.vertexData[i+1],
+                z1 = this.vertexData[i+2];
+            let x2 = this.vertexData[i+3],
+                y2 = this.vertexData[i+4],
+                z2 = this.vertexData[i+5];
+            let x3 = this.vertexData[i+6],
+                y3 = this.vertexData[i+7],
+                z3 = this.vertexData[i+8];
+            
+            if (x1=== 0 && y1 === 0) {
+                theta1 = 0;
+            } else if (x1 < 0) {
+                theta1 = Math.atan(y1/x1) + Math.PI;
             } else {
-                theta = Math.atan(y/x);
+                theta1 = Math.atan(y1/x1);
             }
-          
-            phi = Math.acos(z);
+            phi1 = Math.acos(z1);
 
+            if (x2=== 0 && y2 === 0) {
+                theta2 = 0;
+            } else if (x2 < 0) {
+                theta2 = Math.atan(y2/x2) + Math.PI;
+            } else {
+                theta2 = Math.atan(y2/x2);
+            }
+            phi2 = Math.acos(z2);
 
-            arr[j++] = 0.5*theta / Math.PI;
-            arr[j++] = phi /Math.PI;
+            if (x3=== 0 && y3 === 0) {
+                theta3 = 0;
+            } else if (x3 < 0) {
+                theta3 = Math.atan(y3/x3) + Math.PI;
+            } else {
+                theta3 = Math.atan(y3/x3);
+            }
+            phi3 = Math.acos(z3);
+
+            if (y1 <= 0 && y2 <= 0 && y3 <= 0) {
+                let f1 = (x1 >= 0), f2 = (x2 >= 0), f3 = (x3 >= 0);
+                if (!((f1 && f2 && f3) || (!f1 && !f2 && !f3))) {
+                    if (f1) {
+                        theta1 += 2* Math.PI;
+                    }
+                    if (f2) {
+                        theta2 += 2*Math.PI;
+                    }
+                    if (f3) {
+                        theta3 += 2*Math.PI;
+                    }
+                }
+            }
+            
+            if (phi1 === 0 || phi1 === Math.PI) {
+                theta1 = 0.5 * (theta2 + theta3);
+            } 
+            if (phi2 === 0 || phi2 === Math.PI) {
+                theta2 = 0.5 * (theta1 + theta3);
+            } 
+            if (phi3 === 0 || phi3 === Math.PI) {
+                theta3 = 0.5 * (theta1 + theta2);
+            }
+
+            arr[j++] = 0.5*theta1 / Math.PI;
+            arr[j++] = phi1 /Math.PI;
+            arr[j++] = 0.5*theta2 / Math.PI;
+            arr[j++] = phi2 /Math.PI;
+            arr[j++] = 0.5*theta3 / Math.PI;
+            arr[j++] = phi3 /Math.PI;
         }
 
         return arr;
