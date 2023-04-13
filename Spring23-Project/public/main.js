@@ -4,7 +4,7 @@
 */
 
 import { Icosahedron } from './modules/icosahedron.js';
-import { createShaderProgram, loadTexture, bindBuffers, linkAttributes } from './modules/dataBuffers.js';
+import { createShaderProgram, bindBuffers, linkAttributes } from './modules/dataBuffers.js';
 
 main();
 
@@ -60,9 +60,7 @@ function main() {
 
     const buffers = bindBuffers(gl, icosahedron);
 
-    const shaderProgram = createShaderProgram(gl, vertexSource, fragmentSource);
-
-    const texture = loadTexture(gl, 'earth.jpg');
+    const shaderProgram = createShaderProgram(gl, vertexSource, fragmentSource, 'earth.jpg');
 
     linkAttributes(gl, buffers, shaderProgram);
 
@@ -93,7 +91,7 @@ function main() {
         gl.enable(gl.DEPTH_TEST);
 
         gl.clear(gl.COLOR_BUFFER_BIT, gl.DEPTH_BUFFER_BIT);
-        gl.clearColor(0, 0, 1, 1);
+        gl.clearColor(0, 0, 0, 1);
     
         gl.drawArrays(gl.TRIANGLES, 0, icosahedron.vertexData.length / 3);
     }

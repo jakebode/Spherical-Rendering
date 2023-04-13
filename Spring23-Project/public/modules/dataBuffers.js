@@ -1,4 +1,24 @@
-function createShaderProgram(gl, vertexSource, fragmentSource) {
+function bindBuffers(gl, icosahedron) {
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(icosahedron.vertexData), gl.STATIC_DRAW);
+
+    const colorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(icosahedron.getNormals()), gl.STATIC_DRAW);
+
+    const textureBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, icosahedron.getTexCoords(), gl.STATIC_DRAW);
+
+    return {
+        position: positionBuffer,
+        color: colorBuffer,
+        texture: textureBuffer
+    };
+}
+
+function createShaderProgram(gl, vertexSource, fragmentSource, texUrl) {
     const vertexShader = gl.createShader(gl.VERTEX_SHADER);
     gl.shaderSource(vertexShader, vertexSource);
     gl.compileShader(vertexShader);
@@ -6,6 +26,8 @@ function createShaderProgram(gl, vertexSource, fragmentSource) {
     const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
     gl.shaderSource(fragmentShader, fragmentSource);
     gl.compileShader(fragmentShader);
+
+    loadTexture(gl, texUrl);
 
     const program = gl.createProgram();
     gl.attachShader(program, vertexShader);
@@ -39,31 +61,9 @@ function loadTexture(gl, url) {
     
         gl.generateMipmap(gl.TEXTURE_2D);
         
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    };
-  
-    return texture;
-}
-
-function bindBuffers(gl, icosahedron) {
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(icosahedron.vertexData), gl.STATIC_DRAW);
-
-    const colorBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(icosahedron.getNormals()), gl.STATIC_DRAW);
-
-    const textureBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, icosahedron.getTexCoords(), gl.STATIC_DRAW);
-
-    return {
-        position: positionBuffer,
-        color: colorBuffer,
-        texture: textureBuffer,
     };
 }
 
@@ -81,7 +81,7 @@ function linkAttributes(gl, buffers, program) {
     const textureRef = gl.getAttribLocation(program, 'texture');
     gl.enableVertexAttribArray(textureRef);
     gl.bindBuffer(gl.ARRAY_BUFFER, buffers.texture);
-    gl.vertexAttribPointer(textureRef, 3, gl.FLOAT, false, 0, 0);   
+    gl.vertexAttribPointer(textureRef, 2, gl.FLOAT, false, 0, 0);   
 }
 
-export { createShaderProgram, loadTexture, bindBuffers, linkAttributes };
+export { bindBuffers, createShaderProgram, linkAttributes };
