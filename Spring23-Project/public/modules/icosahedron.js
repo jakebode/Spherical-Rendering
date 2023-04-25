@@ -73,10 +73,6 @@ class Icosahedron {
     //  in more general class in the future!
     // ==================================================================================
 
-    rotateVertexData() {
-
-    }
-
     /////////////////////////////////////////////////////////////////////////
     // takes pairings of verticies to create an array containing all vertexes
     //  needed to display the Icosahedron with triangles
@@ -128,10 +124,6 @@ class Icosahedron {
         }
         //console.log(newVertices);
         this.vertexData = newVertices;
-    }
-
-    flagTriangles() {
-
     }
 
     #getMidpoint(v1, v2) {
@@ -201,12 +193,6 @@ class Icosahedron {
 
     #dotProduct(v1, v2) {
         return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
-    }
-
-    #flaggedCoords() {
-        for (let i = 0; i < this.vertexData.length; i+=9) {
-            
-        }        
     }
 
     getTexCoords() {
@@ -287,6 +273,80 @@ class Icosahedron {
         }
 
         return arr;
+    }
+
+    #phiFunc(r) {
+        return (r>1) ? 0 : (1 + 2*r*r*r - 3*r*r);
+    }
+
+    #hash(i, j, k, random, length) {
+        return random[3*(i + length*j + length*length*k)];
+    }
+
+    #dist(x, i, y, j, z, k) {
+        return Math.sqrt((x-i)*(x-i) + (y-j)*(y-j) + (z-k)*(z-k));
+    }
+
+    #noise(x, y, z, scale, random, length) {
+        x *= scale;
+        y *= scale;
+        z *= scale;
+        x += 0.5 * length;
+        y += 0.5 * length;
+        z += 0.5 * length;
+        let i = Math.floor(x),
+            j = Math.floor(y),
+            k = Math.floor(z);
+        let hash1 = this.#hash(i, j, k, random, length),
+            phi1 = this.#phiFunc(this.#dist(x, i, y, j, z, k)),
+            hash2 = this.#hash(i, j, k+1, random, length),
+            phi2 = this.#phiFunc(this.#dist(x, i, y, j, z, k+1)),
+            hash3 = this.#hash(i, j+1, k, random, length),
+            phi3 = this.#phiFunc(this.#dist(x, i, y, j+1, z, k)),
+            hash4 = this.#hash(i, j+1, k+1, random, length),
+            phi4 = this.#phiFunc(this.#dist(x, i, y, j+1, z, k+1)),
+            hash5 = this.#hash(i+1, j, k, random, length),
+            phi5 = this.#phiFunc(this.#dist(x, i+1, y, j, z, k)),
+            hash6 = this.#hash(i+1, j, k+1, random, length),
+            phi6 = this.#phiFunc(this.#dist(x, i+1, y, j, z, k+1)),
+            hash7 = this.#hash(i+1, j+1, k, random, length),
+            phi7 = this.#phiFunc(this.#dist(x, i+1, y, j+1, z, k)),
+            hash8 = this.#hash(i+1, j+1, k+1, random, length),
+            phi8 = this.#phiFunc(this.#dist(x, i+1, y, j+1, z, k+1));
+
+            let noiseVal = (hash1*phi1 + hash2*phi2 + hash3*phi3 + hash4*phi4 
+                + hash5*phi5 + hash6*phi6 + hash7*phi7 + hash8*phi8);
+            return noiseVal;
+    }
+
+    getTexData() {
+        var random = new Float32Array(3000000);
+        for (let i = 0; i < 3000000; i++) {
+            random[i] = Math.random();
+        }
+
+        var data = new Uint8Array(1000 * 500 * 4);
+        
+        for (let j = 0; j < data.length; j+=4) {
+            let u = ((j/4)%1000)/1000,
+                v = Math.floor((j/4)/1000)/500,
+                x = Math.sin(Math.PI*v) * Math.cos(2*Math.PI*u),
+                y = Math.sin(Math.PI*v) * Math.sin(2*Math.PI*u),
+                z = Math.cos(Math.PI*v);
+            // let i = j << 2;
+            // let x = (i % 1000) * 0.1,
+            //     y = Math.floor(i / 1000) * 0.1,
+            //     z = Math.floor(i / 1000000) * 0.1;
+
+            let val = 255 * this.#noise(x, y, z, 10, random, 100);
+            data[j] = val;
+            data[j+1] = val;
+            data[j+2] = val;
+            data[j+3] = 255;
+        }
+
+        console.log(data);
+        return data;
     }
 
 }
