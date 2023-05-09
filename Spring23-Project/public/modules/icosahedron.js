@@ -279,8 +279,8 @@ class Icosahedron {
         return (r>1) ? 0 : (1 + 2*r*r*r - 3*r*r);
     }
 
-    #hash(i, j, k, random, length) {
-        return random[3*(i + length*j + length*length*k)];
+    #hash(i, j, k, random, length, off) {
+        return random[3*(i + length*j + length*length*k) + off];
     }
 
     #dist(x, i, y, j, z, k) {
@@ -297,32 +297,24 @@ class Icosahedron {
         let i = Math.floor(x),
             j = Math.floor(y),
             k = Math.floor(z);
-        let hash1 = this.#hash(i, j, k, random, length),
-            phi1 = this.#phiFunc(this.#dist(x, i, y, j, z, k)),
-            hash2 = this.#hash(i, j, k+1, random, length),
-            phi2 = this.#phiFunc(this.#dist(x, i, y, j, z, k+1)),
-            hash3 = this.#hash(i, j+1, k, random, length),
-            phi3 = this.#phiFunc(this.#dist(x, i, y, j+1, z, k)),
-            hash4 = this.#hash(i, j+1, k+1, random, length),
-            phi4 = this.#phiFunc(this.#dist(x, i, y, j+1, z, k+1)),
-            hash5 = this.#hash(i+1, j, k, random, length),
-            phi5 = this.#phiFunc(this.#dist(x, i+1, y, j, z, k)),
-            hash6 = this.#hash(i+1, j, k+1, random, length),
-            phi6 = this.#phiFunc(this.#dist(x, i+1, y, j, z, k+1)),
-            hash7 = this.#hash(i+1, j+1, k, random, length),
-            phi7 = this.#phiFunc(this.#dist(x, i+1, y, j+1, z, k)),
-            hash8 = this.#hash(i+1, j+1, k+1, random, length),
-            phi8 = this.#phiFunc(this.#dist(x, i+1, y, j+1, z, k+1));
 
-            let noiseVal = (hash1*phi1 + hash2*phi2 + hash3*phi3 + hash4*phi4 
-                + hash5*phi5 + hash6*phi6 + hash7*phi7 + hash8*phi8);
-            return noiseVal;
+        let noiseVal = 0;
+
+        for (let n = 0; n < 8; n++) {
+            let di = n & 1,
+                dj = (n & 2) >> 1,
+                dk = (n & 4) >> 2;
+            noiseVal += this.#hash(i+di, j+dj, k+dk, random, length, 0) * (x-i-di) * this.#phiFunc(this.#dist(x, i+di, y, j+dj, z, k+dk));
+            noiseVal += this.#hash(i+di, j+dj, k+dk, random, length, 1) * (y-j-dj) * this.#phiFunc(this.#dist(x, i+di, y, j+dj, z, k+dk));
+            noiseVal += this.#hash(i+di, j+dj, k+dk, random, length, 2) * (z-k-dk) * this.#phiFunc(this.#dist(x, i+di, y, j+dj, z, k+dk));
+        }
+        return noiseVal;
     }
 
-    getTexData() {
+    getHeightTexData() {
         var random = new Float32Array(3000000);
         for (let i = 0; i < 3000000; i++) {
-            random[i] = Math.random();
+            random[i] = Math.random() * 2 - 1;
         }
 
         var data = new Uint8Array(1000 * 500 * 4);
@@ -338,17 +330,42 @@ class Icosahedron {
             //     y = Math.floor(i / 1000) * 0.1,
             //     z = Math.floor(i / 1000000) * 0.1;
 
-            let val = 255 * this.#noise(x, y, z, 10, random, 100);
+            let val = 255 * (0.5 * (this.#noise(x, y, z, 5, random, 100) + 1));
+            data[j] = Math.round(Math.sin(0.025 * val + 0) * 127 + 128);
+            data[j+1] = Math.round(Math.sin(0.025 * val + 4) * 127 + 128);
+            data[j+2] = Math.round(Math.sin(0.025 * val + 2) * 127 + 128);
+            data[j+3] = 255;
+        }
+        return data;
+    }
+
+    getTexData() {
+        var random = new Float32Array(3000000);
+        for (let i = 0; i < 3000000; i++) {
+            random[i] = Math.random() * 2 - 1;
+        }
+
+        var data = new Uint8Array(1000 * 500 * 4);
+        
+        for (let j = 0; j < data.length; j+=4) {
+            let u = ((j/4)%1000)/1000,
+                v = Math.floor((j/4)/1000)/500,
+                x = Math.sin(Math.PI*v) * Math.cos(2*Math.PI*u),
+                y = Math.sin(Math.PI*v) * Math.sin(2*Math.PI*u),
+                z = Math.cos(Math.PI*v);
+            // let i = j << 2;
+            // let x = (i % 1000) * 0.1,
+            //     y = Math.floor(i / 1000) * 0.1,
+            //     z = Math.floor(i / 1000000) * 0.1;
+
+            let val = 255 * (0.5 * (this.#noise(x, y, z, 5, random, 100) + 1));
             data[j] = val;
             data[j+1] = val;
             data[j+2] = val;
             data[j+3] = 255;
         }
-
-        console.log(data);
         return data;
     }
-
 }
 
 export { Icosahedron };

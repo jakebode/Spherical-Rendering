@@ -2,3 +2,9 @@
     border: 5px solid red;
     margin: auto;
 }
+
+.buttons button {
+    /*display: block;*/
+    background-color: azure;
+    width: 10%;
+}
