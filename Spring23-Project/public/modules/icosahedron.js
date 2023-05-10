@@ -73,10 +73,6 @@ class Icosahedron {
     //  in more general class in the future!
     // ==================================================================================
 
-    rotateVertexData() {
-
-    }
-
     /////////////////////////////////////////////////////////////////////////
     // takes pairings of verticies to create an array containing all vertexes
     //  needed to display the Icosahedron with triangles
@@ -128,10 +124,6 @@ class Icosahedron {
         }
         //console.log(newVertices);
         this.vertexData = newVertices;
-    }
-
-    flagTriangles() {
-
     }
 
     #getMidpoint(v1, v2) {
@@ -201,12 +193,6 @@ class Icosahedron {
 
     #dotProduct(v1, v2) {
         return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
-    }
-
-    #flaggedCoords() {
-        for (let i = 0; i < this.vertexData.length; i+=9) {
-            
-        }        
     }
 
     getTexCoords() {
@@ -289,6 +275,97 @@ class Icosahedron {
         return arr;
     }
 
+    #phiFunc(r) {
+        return (r>1) ? 0 : (1 + 2*r*r*r - 3*r*r);
+    }
+
+    #hash(i, j, k, random, length, off) {
+        return random[3*(i + length*j + length*length*k) + off];
+    }
+
+    #dist(x, i, y, j, z, k) {
+        return Math.sqrt((x-i)*(x-i) + (y-j)*(y-j) + (z-k)*(z-k));
+    }
+
+    #noise(x, y, z, scale, random, length) {
+        x *= scale;
+        y *= scale;
+        z *= scale;
+        x += 0.5 * length;
+        y += 0.5 * length;
+        z += 0.5 * length;
+        let i = Math.floor(x),
+            j = Math.floor(y),
+            k = Math.floor(z);
+
+        let noiseVal = 0;
+
+        for (let n = 0; n < 8; n++) {
+            let di = n & 1,
+                dj = (n & 2) >> 1,
+                dk = (n & 4) >> 2;
+            noiseVal += this.#hash(i+di, j+dj, k+dk, random, length, 0) * (x-i-di) * this.#phiFunc(this.#dist(x, i+di, y, j+dj, z, k+dk));
+            noiseVal += this.#hash(i+di, j+dj, k+dk, random, length, 1) * (y-j-dj) * this.#phiFunc(this.#dist(x, i+di, y, j+dj, z, k+dk));
+            noiseVal += this.#hash(i+di, j+dj, k+dk, random, length, 2) * (z-k-dk) * this.#phiFunc(this.#dist(x, i+di, y, j+dj, z, k+dk));
+        }
+        return noiseVal;
+    }
+
+    getHeightTexData() {
+        var random = new Float32Array(3000000);
+        for (let i = 0; i < 3000000; i++) {
+            random[i] = Math.random() * 2 - 1;
+        }
+
+        var data = new Uint8Array(1000 * 500 * 4);
+        
+        for (let j = 0; j < data.length; j+=4) {
+            let u = ((j/4)%1000)/1000,
+                v = Math.floor((j/4)/1000)/500,
+                x = Math.sin(Math.PI*v) * Math.cos(2*Math.PI*u),
+                y = Math.sin(Math.PI*v) * Math.sin(2*Math.PI*u),
+                z = Math.cos(Math.PI*v);
+            // let i = j << 2;
+            // let x = (i % 1000) * 0.1,
+            //     y = Math.floor(i / 1000) * 0.1,
+            //     z = Math.floor(i / 1000000) * 0.1;
+
+            let val = 255 * (0.5 * (this.#noise(x, y, z, 5, random, 100) + 1));
+            data[j] = Math.round(Math.sin(0.025 * val + 0) * 127 + 128);
+            data[j+1] = Math.round(Math.sin(0.025 * val + 4) * 127 + 128);
+            data[j+2] = Math.round(Math.sin(0.025 * val + 2) * 127 + 128);
+            data[j+3] = 255;
+        }
+        return data;
+    }
+
+    getTexData() {
+        var random = new Float32Array(3000000);
+        for (let i = 0; i < 3000000; i++) {
+            random[i] = Math.random() * 2 - 1;
+        }
+
+        var data = new Uint8Array(1000 * 500 * 4);
+        
+        for (let j = 0; j < data.length; j+=4) {
+            let u = ((j/4)%1000)/1000,
+                v = Math.floor((j/4)/1000)/500,
+                x = Math.sin(Math.PI*v) * Math.cos(2*Math.PI*u),
+                y = Math.sin(Math.PI*v) * Math.sin(2*Math.PI*u),
+                z = Math.cos(Math.PI*v);
+            // let i = j << 2;
+            // let x = (i % 1000) * 0.1,
+            //     y = Math.floor(i / 1000) * 0.1,
+            //     z = Math.floor(i / 1000000) * 0.1;
+
+            let val = 255 * (0.5 * (this.#noise(x, y, z, 5, random, 100) + 1));
+            data[j] = val;
+            data[j+1] = val;
+            data[j+2] = val;
+            data[j+3] = 255;
+        }
+        return data;
+    }
 }
 
 export { Icosahedron };

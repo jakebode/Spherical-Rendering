@@ -23,7 +23,7 @@ function bindBuffers(gl, icosahedron) {
     };
 }
 
-function createShaderProgram(gl, vertexSource, fragmentSource, texUrl) {
+function createShaderProgram(gl, vertexSource, fragmentSource, texData) {
     const vertexShader = gl.createShader(gl.VERTEX_SHADER);
     gl.shaderSource(vertexShader, vertexSource);
     gl.compileShader(vertexShader);
@@ -32,7 +32,7 @@ function createShaderProgram(gl, vertexSource, fragmentSource, texUrl) {
     gl.shaderSource(fragmentShader, fragmentSource);
     gl.compileShader(fragmentShader);
 
-    loadTexture(gl, texUrl);
+    loadTexture(gl, texData, typeof texData === "string");
 
     const program = gl.createProgram();
     gl.attachShader(program, vertexShader);
@@ -42,34 +42,45 @@ function createShaderProgram(gl, vertexSource, fragmentSource, texUrl) {
     return program;
 }
 
-function loadTexture(gl, url) {
+function loadTexture(gl, texData, isImage) {
     const texture = gl.createTexture();
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, texture);
 
-    let level = 0,
-        internalFormat = gl.RGBA,
-        width = 1,
-        height = 1,
-        border = 0,
-        srcFormat = gl.RGBA,
-        srcType = gl.UNSIGNED_BYTE,
-        pixel = new Uint8Array([0, 0, 255, 255]);
-    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel);
+    if (isImage) {
+        let level = 0,
+            internalFormat = gl.RGBA,
+            width = 1,
+            height = 1,
+            border = 0,
+            srcFormat = gl.RGBA,
+            srcType = gl.UNSIGNED_BYTE,
+            pixel = new Uint8Array([0, 0, 255, 255]);
+        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, width, height, border, srcFormat, srcType, pixel);
 
-    const image = new Image();
-    image.src = url;
-    image.onload = () => {
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, image);
-    
-        gl.generateMipmap(gl.TEXTURE_2D);
+        const image = new Image();
+        image.src = texData;
+        image.onload = () => {
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texImage2D(gl.TEXTURE_2D, level, internalFormat, srcFormat, srcType, image);
         
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    };
+            gl.generateMipmap(gl.TEXTURE_2D);
+            
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        };
+        return;
+    }
+
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1000, 500, 0, gl.RGBA, gl.UNSIGNED_BYTE, texData);
+    
+    gl.generateMipmap(gl.TEXTURE_2D);
+    
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 }
 
 function linkAttributes(gl, buffers, program) {

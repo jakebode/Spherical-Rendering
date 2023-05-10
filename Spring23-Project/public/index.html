@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>3d rendering</title>
+    <title>rendering a sphere</title>
     <link rel="stylesheet" href="style.css"> 
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.8.1/gl-matrix-min.js"
@@ -10,12 +10,27 @@
       crossorigin="anonymous"
       defer>
     </script>
-    <script type="module" src="main.js" defer></script>
   </head>
 
   <body>
     <div id="canvas">
       <canvas id="glcanvas" width="800" height="800"></canvas>
     </div>
+    <div class="buttons">
+      <button id="globe">Globe</button>
+      <button id="noise">Random Noise</button>
+      <button id="height">Height Map</button>
+    </div>
+    <script type="module" defer>
+      import main from './main.js';
+      
+      const globeButton = document.getElementById("globe");
+      const noiseButton = document.getElementById("noise");
+      const heightButton = document.getElementById("height");
+
+      globeButton.addEventListener('click', () => main(1));
+      noiseButton.addEventListener('click', () => main(0));
+      heightButton.addEventListener('click', () => main(2));
+    </script>
   </body>
 </html>
